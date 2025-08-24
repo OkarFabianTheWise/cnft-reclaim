@@ -1,0 +1,22 @@
+[package]
+name = "cnft-reclaim"
+version = "0.1.0"
+edition = "2021"
+description = "100% On-chain Solana program for fetching TWAP prices from Pyth Network"
+
+[dependencies]
+borsh = "0.10.4"
+borsh-derive = "0.10.4"
+solana-program = "1.18"
+solana-account-info = "2.2.1" 
+pyth-sdk-solana = "0.10.6"
+
+[dev-dependencies]
+solana-program-test = "1.18"
+solana-sdk = "1.18"
+solana-client = "1.18"
+tokio = { version = "1.47.1", features = ["full"] }
+
+[lib]
+name = "cnft_reclaim"
+crate-type = ["cdylib", "lib"]
