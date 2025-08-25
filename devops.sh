@@ -48,7 +48,7 @@ case $1 in
   ;;
 
   run-tests)
-    echo "🧪 Running build, deploy, and tests..."
+    echo "🧪 Running build, and tests..."
     # Run all Rust unit and integration tests
     cargo test -- --nocapture
   ;;
