@@ -7,14 +7,12 @@ description = "100% On-chain Solana program for fetching TWAP prices from Pyth N
 [dependencies]
 borsh = "0.10.4"
 borsh-derive = "0.10.4"
-solana-program = "1.18"
-solana-account-info = "2.2.1" 
+solana-program = "1.16"
 pyth-sdk-solana = "0.10.6"
 
 [dev-dependencies]
-solana-program-test = "1.18"
-solana-sdk = "1.18"
-solana-client = "1.18"
+solana-program-test = "1.16"
+solana-client = "1.16"
 tokio = { version = "1.47.1", features = ["full"] }
 
 [lib]
