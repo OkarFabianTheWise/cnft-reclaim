@@ -1,0 +1,20 @@
+[package]
+name = "reclaim-amm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+borsh = "0.10.4"
+borsh-derive = "0.10.4"
+solana-program = "2.1.22"
+shellexpand = "3.1.1"
+
+[dev-dependencies]
+solana-program-test = "2.1.22"
+solana-client = "2.1.22"
+solana-sdk = "2.1.22"
+tokio = { version = "1.47.1", features = ["full"] }
+
+[lib]
+name = "reclaim_amm"
+crate-type = ["cdylib", "lib"]
