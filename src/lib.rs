@@ -46,6 +46,7 @@ pub fn process_instruction(
     }
 }
 
+// Initialize the twap_storage pda if it doesn't exist
 fn process_initialize_twap_storage(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -71,40 +72,44 @@ fn process_initialize_twap_storage(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // Create account
-    let rent = solana_program::sysvar::rent::Rent::get()?;
-    let lamports = rent.minimum_balance(TwapStorage::LEN);
+    // Check if account is already initialized
+    if twap_storage_account.data.borrow().is_empty() {
+        // Create account
+        let rent = solana_program::sysvar::rent::Rent::get()?;
+        let lamports = rent.minimum_balance(TwapStorage::LEN);
 
-    invoke_signed(
-        &solana_program::system_instruction::create_account(
-            payer.key,
-            twap_storage_account.key,
-            lamports,
-            TwapStorage::LEN as u64,
-            program_id,
-        ),
-        &[payer.clone(), twap_storage_account.clone(), system_program.clone()],
-        &[&[
-            b"twap",
-            token_x_mint.key.as_ref(),
-            usdc_mint.key.as_ref(),
-            &[bump_seed],
-        ]],
-    )?;
+        invoke_signed(
+            &solana_program::system_instruction::create_account(
+                payer.key,
+                twap_storage_account.key,
+                lamports,
+                TwapStorage::LEN as u64,
+                program_id,
+            ),
+            &[payer.clone(), twap_storage_account.clone(), system_program.clone()],
+            &[&[
+                b"twap",
+                token_x_mint.key.as_ref(),
+                usdc_mint.key.as_ref(),
+                &[bump_seed],
+            ]],
+        )?;
 
-    // Initialize storage
-    let mut twap_storage = TwapStorage {
-        is_initialized: true,
-        token_x_mint: *token_x_mint.key,
-        usdc_mint: *usdc_mint.key,
-        observations: [PriceObservation::default(); OBSERVATION_COUNT],
-        current_index: 0,
-        observation_count: 0,
-    };
+        // Initialize storage
+        let mut twap_storage = TwapStorage {
+            is_initialized: true,
+            token_x_mint: *token_x_mint.key,
+            usdc_mint: *usdc_mint.key,
+            observations: [PriceObservation::default(); OBSERVATION_COUNT],
+            current_index: 0,
+            observation_count: 0,
+        };
 
-    twap_storage.serialize(&mut &mut twap_storage_account.data.borrow_mut()[..])?;
-    
-    msg!("TWAP storage initialized for token pair");
+        twap_storage.serialize(&mut &mut twap_storage_account.data.borrow_mut()[..])?;
+        
+        msg!("TWAP storage initialized for token pair");
+    }
+
     Ok(())
 }
 
@@ -158,7 +163,7 @@ fn process_update_price_observation(
     };
 
     // Update indices
-        twap_storage.current_index = (twap_storage.current_index + 1) % (OBSERVATION_COUNT as u8);
+    twap_storage.current_index = (twap_storage.current_index + 1) % (OBSERVATION_COUNT as u8);
     if usize::from(twap_storage.observation_count) < OBSERVATION_COUNT {
             twap_storage.observation_count += 1;
     }
@@ -166,7 +171,8 @@ fn process_update_price_observation(
     // Save updated storage
     twap_storage.serialize(&mut &mut twap_storage_account.data.borrow_mut()[..])?;
 
-    msg!("Price observation updated: {} at timestamp {}", current_price, current_timestamp);
+    // log price in usdc(decimals: 6)
+    msg!("Price observation updated: {} at timestamp {}", current_price / 1_000_000, current_timestamp);
     Ok(())
 }
 
@@ -198,7 +204,7 @@ fn process_get_twap_price(
     // Calculate TWAP
     let twap_price = calculate_twap(&twap_storage, current_timestamp, window_seconds)?;
     
-    msg!("TWAP price calculated: {}", twap_price);
+    msg!("TWAP price calculated: {}", twap_price / 1_000_000); // log price in usdc (decimals: 6)
     Ok(())
 }
 

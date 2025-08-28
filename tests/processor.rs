@@ -1,3 +1,4 @@
+use reclaim_amm::find_raydium_pool_address;
 // Integration tests for reclaim-amm program
 use std::str::FromStr;
 use solana_program_test::*;
@@ -19,34 +20,35 @@ fn get_payer() -> Keypair {
         .expect("Failed to read keypair file")
 }
 
-// #[tokio::test(flavor = "multi_thread")]
-// async fn test_initialize_twap_storage() {
-//     let program_id = Pubkey::from_str("EAUWzk6LNrRPCYeSfxkbp659MUqTsDrQbJcLUKrLzAZc").unwrap();
-//     let token_x_mint = Pubkey::from_str("HyjDHQrqA7YogQGAEcJA6zJaeTRVJ5qWSJABBEF8cNGf").unwrap(); // Example: SOL
-//     let usdc_mint = Pubkey::from_str("9KRFTov9dsj5r4jTLc5h9VszjXoPKVKUkzEf8WxBox2k").unwrap(); // Example: USDC
-//     let payer = get_payer();
-//     let (twap_storage, _bump) = find_twap_storage_address(&token_x_mint, &usdc_mint, &program_id);
-//     // Fetch pool info from API
-//     let ix = solana_sdk::instruction::Instruction {
-//         program_id,
-//         accounts: vec![
-//             solana_sdk::instruction::AccountMeta::new(payer.pubkey(), true),
-//             solana_sdk::instruction::AccountMeta::new(twap_storage, false),
-//             solana_sdk::instruction::AccountMeta::new_readonly(token_x_mint, false),
-//             solana_sdk::instruction::AccountMeta::new_readonly(usdc_mint, false),
-//             solana_sdk::instruction::AccountMeta::new_readonly(system_program::ID, false),
-//         ],
-//         data: TwapInstruction::InitializeTwapStorage.try_to_vec().unwrap(),
-//     };
 
-//     let rpc_url = std::env::var("SOLANA_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string());
-//     let client = solana_client::rpc_client::RpcClient::new(rpc_url);
-//     let recent_blockhash = client.get_latest_blockhash().expect("blockhash");
-//     let mut tx = Transaction::new_with_payer(&[ix], Some(&payer.pubkey()));
-//     tx.sign(&[&payer], recent_blockhash);
-//     let sig = client.send_and_confirm_transaction(&tx).expect("send tx");
-//     println!("InitializeTwapStorage tx: {}", sig);
-// }
+#[tokio::test(flavor = "multi_thread")]
+async fn test_initialize_twap_storage() {
+    let program_id = Pubkey::from_str("EAUWzk6LNrRPCYeSfxkbp659MUqTsDrQbJcLUKrLzAZc").unwrap();
+    let token_x_mint = Pubkey::from_str("HyjDHQrqA7YogQGAEcJA6zJaeTRVJ5qWSJABBEF8cNGf").unwrap(); // Example: SOL
+    let usdc_mint = Pubkey::from_str("9KRFTov9dsj5r4jTLc5h9VszjXoPKVKUkzEf8WxBox2k").unwrap(); // Example: USDC
+    let payer = get_payer();
+    let (twap_storage, _bump) = find_twap_storage_address(&token_x_mint, &usdc_mint, &program_id);
+    // Fetch pool info from API
+    let ix = solana_sdk::instruction::Instruction {
+        program_id,
+        accounts: vec![
+            solana_sdk::instruction::AccountMeta::new(payer.pubkey(), true),
+            solana_sdk::instruction::AccountMeta::new(twap_storage, false),
+            solana_sdk::instruction::AccountMeta::new_readonly(token_x_mint, false),
+            solana_sdk::instruction::AccountMeta::new_readonly(usdc_mint, false),
+            solana_sdk::instruction::AccountMeta::new_readonly(system_program::ID, false),
+        ],
+        data: TwapInstruction::InitializeTwapStorage.try_to_vec().unwrap(),
+    };
+
+    let rpc_url = std::env::var("SOLANA_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string());
+    let client = solana_client::rpc_client::RpcClient::new(rpc_url);
+    let recent_blockhash = client.get_latest_blockhash().expect("blockhash");
+    let mut tx = Transaction::new_with_payer(&[ix], Some(&payer.pubkey()));
+    tx.sign(&[&payer], recent_blockhash);
+    let sig = client.send_and_confirm_transaction(&tx).expect("send tx");
+    println!("InitializeTwapStorage tx: {}", sig);
+}
 
 
 #[tokio::test(flavor = "multi_thread")]

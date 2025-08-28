@@ -2,13 +2,14 @@
 
 ## Overview
 
-This Solana program implements a simple on-chain oracle for Time-Weighted Average Price (TWAP) using a circular buffer of price observations. It is designed to track the average price of a token pair (e.g., SOL/USDC) over a configurable time window, using on-chain AMM pool data.
+This Solana program implements a simple on-chain oracle for Time-Weighted Average Price (TWAP) using a circular buffer of price observations. It is designed to track the average price of a token pair (e.g., SOL/USDC) over a configurable time window, using on-chain AMM pool data from raydium.
 
 ## How It Works
 
 - The program maintains a fixed-size buffer (default: 3) of price observations, each spaced by a minimum interval (default: 5 minutes).
 - Each observation records the price at a specific timestamp, fetched from the AMM pool vaults.
 - New observations are only recorded if enough time has passed since the last one, ensuring the buffer covers a rolling window (e.g., 15 minutes for 3 observations × 5 minutes).
+- You can resize this to accommodate more observations, and reduce time intervals
 - The buffer is implemented as a circular array, so the oldest observation is overwritten as new ones are added.
 - The TWAP is calculated on-chain using the stored observations.
 
