@@ -13,6 +13,10 @@ This Solana program implements a simple on-chain oracle for Time-Weighted Averag
 - The buffer is implemented as a circular array, so the oldest observation is overwritten as new ones are added.
 - The TWAP is calculated on-chain using the stored observations.
 
+## How to connect the price update
+
+Each time the fragments move, we execute the price update
+
 ## Key Implementation Details
 
 - The buffer size and observation interval are set by the constants `OBSERVATION_COUNT` and `OBSERVATION_INTERVAL` in `src/lib.rs`.
