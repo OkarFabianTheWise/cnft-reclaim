@@ -26,4 +26,11 @@ pub enum TwapInstruction {
     /// 0. [] TWAP storage PDA
     /// 1. [] Clock sysvar
     GetTwapPrice { window_minutes: u8 },
+    /// Burn all token_x from caller's account
+    /// Accounts:
+    /// 0. [signer] User
+    /// 1. [writable] User's token_x account
+    /// 2. [writable] token_x mint
+    /// 3. [] SPL Token program
+    Reclaim,
 }

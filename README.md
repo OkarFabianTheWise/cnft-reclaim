@@ -23,11 +23,14 @@ Each time the fragments move, we execute the price update
 - Price is calculated from the AMM pool's vault token balances.
 - All logic for updating observations and calculating TWAP is on-chain and permissionless.
 - The program can be extended to support more pairs or different intervals by changing the constants.
+- Also the burn mechanism in reclaim method is meant to retrieve the fractions for compensation.
+- We can now join the pieces together after review
 
 ## Deployment and Testing
 
 - Use the provided `devops.sh` script to deploy the program to a Solana cluster.
 - Run `test.sh` to execute the test suite, including TWAP logic.
+- shellexpand = "3.1.1" is needed to get your keypair from cli
 - Example commands:
   - `./devops.sh deploy` – Deploys the program.
   - `./devops.sh run-tests` – Runs all tests.

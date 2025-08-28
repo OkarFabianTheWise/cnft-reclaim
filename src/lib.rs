@@ -2,7 +2,6 @@ pub mod instruction;
 mod state;
 mod utils;
 use borsh::{BorshDeserialize, BorshSerialize};
-
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint,
@@ -43,16 +42,16 @@ pub fn process_instruction(
         TwapInstruction::GetTwapPrice { window_minutes } => {
             process_get_twap_price(program_id, accounts, window_minutes)
         }
-        TwapInstruction::Reclaim { amount } => {
-            process_reclaim(program_id, accounts, amount)
+        TwapInstruction::Reclaim => {
+            process_reclaim(program_id, accounts)
         }
     }
 }
-// Burns token_x from the caller and logs info
+
+// Burns token fragments from the caller and logs info
 fn process_reclaim(
-    program_id: &Pubkey,
+    _program_id: &Pubkey,
     accounts: &[AccountInfo],
-    amount: u64,
 ) -> ProgramResult {
     use solana_program::program_pack::Pack;
     let account_info_iter = &mut accounts.iter();
@@ -66,22 +65,21 @@ fn process_reclaim(
         return Err(ProgramError::MissingRequiredSignature);
     }
 
-    // Check user holds enough token_x
-    let user_token_x_data = user_token_x_account.try_borrow_data()?;
+    // Get user's full token_x balance
     let user_token_x_amount = get_token_account_amount(user_token_x_account)?;
-    if user_token_x_amount < amount {
-        msg!("User does not hold enough token_x");
+    if user_token_x_amount == 0 {
+        msg!("User does not hold any token_x");
         return Err(ProgramError::InsufficientFunds);
     }
 
-    // Burn token_x from user's account
+    // Burn full token_x balance from user's account
     let ix = spl_token::instruction::burn(
         token_program.key,
         user_token_x_account.key,
         token_x_mint.key,
         user.key,
         &[],
-        amount,
+        user_token_x_amount,
     )?;
     invoke_signed(
         &ix,
@@ -90,7 +88,7 @@ fn process_reclaim(
     )?;
 
     // Log info
-    msg!("Reclaim: user {} burnt {} token_x (decimals: 6)", user.key, amount / 1_000_000);
+    msg!("Reclaim: user {} burnt {} token_x (decimals: 6)", user.key, user_token_x_amount / 1_000_000);
     Ok(())
 }
 

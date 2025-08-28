@@ -7,6 +7,8 @@ edition = "2021"
 borsh = "0.10.4"
 borsh-derive = "0.10.4"
 solana-program = "2.1.22"
+spl-token = { version = "7.0.0", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "7.0.0", features = ["no-entrypoint"] }
 shellexpand = "3.1.1"
 
 [dev-dependencies]

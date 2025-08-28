@@ -3,6 +3,10 @@ use reclaim_amm::find_raydium_pool_address;
 use std::str::FromStr;
 use solana_program_test::*;
 use solana_sdk::{
+    instruction::{
+        Instruction,
+        AccountMeta
+    },
     signature::{Keypair, read_keypair_file},
     signer::Signer,
     transaction::Transaction,
@@ -12,12 +16,68 @@ use solana_sdk::{
 use reclaim_amm::{find_twap_storage_address};
 use reclaim_amm::instruction::TwapInstruction;
 use borsh::BorshSerialize;
+use solana_client::rpc_client::RpcClient;
 mod raydium;
 
 // Helper to get payer keypair from CLI config
 fn get_payer() -> Keypair {
     read_keypair_file(shellexpand::tilde("~/.config/solana/id.json").to_string())
         .expect("Failed to read keypair file")
+}
+
+// Helper to get payer keypair from CLI config
+#[tokio::test(flavor = "multi_thread")]
+async fn test_reclaim() {
+    let payer = get_payer();
+    let user = &payer;
+    let token_x_mint = Pubkey::from_str("HyjDHQrqA7YogQGAEcJA6zJaeTRVJ5qWSJABBEF8cNGf").unwrap();
+    let token_program = spl_token::id();
+
+    // User is payer
+    let user_token_x_account = spl_associated_token_account::get_associated_token_address(&user.pubkey(), &token_x_mint);
+
+    let rpc_url = std::env::var("SOLANA_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string());
+    let client = RpcClient::new(rpc_url);
+    let recent_blockhash = client.get_latest_blockhash().expect("blockhash");
+
+    // Mint 2_000_000 token_x (decimals: 6) to user
+    // (You may need to airdrop SOL to payer for fees)
+    // For brevity, skip minting code here; assume user_token_x_account has 2_000_000
+
+    // Build reclaim instruction
+    let program_id = Pubkey::from_str("EAUWzk6LNrRPCYeSfxkbp659MUqTsDrQbJcLUKrLzAZc").unwrap();
+    let reclaim_ix = Instruction {
+        program_id,
+        accounts: vec![
+            AccountMeta::new(user.pubkey(), true),
+            AccountMeta::new(user_token_x_account, false),
+            AccountMeta::new(token_x_mint, false),
+            AccountMeta::new_readonly(token_program, false),
+        ],
+        data: TwapInstruction::Reclaim.try_to_vec().unwrap(),
+    };
+
+    // Send transaction
+    let mut tx = Transaction::new_with_payer(&[reclaim_ix], Some(&user.pubkey()));
+    tx.sign(&[user], recent_blockhash);
+    let sig = client.send_and_confirm_transaction(&tx).expect("send tx");
+    println!("Reclaim tx: {}", sig);
+
+    // Try reclaiming again (should error, balance is zero)
+    let over_reclaim_ix = Instruction {
+        program_id,
+        accounts: vec![
+            AccountMeta::new(user.pubkey(), true),
+            AccountMeta::new(user_token_x_account, false),
+            AccountMeta::new(token_x_mint, false),
+            AccountMeta::new_readonly(token_program, false),
+        ],
+        data: TwapInstruction::Reclaim.try_to_vec().unwrap(),
+    };
+    let mut tx2 = Transaction::new_with_payer(&[over_reclaim_ix], Some(&user.pubkey()));
+    tx2.sign(&[user], recent_blockhash);
+    let result = client.send_and_confirm_transaction(&tx2);
+    assert!(result.is_err(), "Should error if user does not hold any token_x");
 }
 
 
@@ -42,7 +102,7 @@ async fn test_initialize_twap_storage() {
     };
 
     let rpc_url = std::env::var("SOLANA_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string());
-    let client = solana_client::rpc_client::RpcClient::new(rpc_url);
+    let client = RpcClient::new(rpc_url);
     let recent_blockhash = client.get_latest_blockhash().expect("blockhash");
     let mut tx = Transaction::new_with_payer(&[ix], Some(&payer.pubkey()));
     tx.sign(&[&payer], recent_blockhash);
@@ -92,7 +152,7 @@ async fn test_update_price_observation() -> Result<(), Box<dyn std::error::Error
     };
 
     let rpc_url = std::env::var("SOLANA_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string());
-    let client = solana_client::rpc_client::RpcClient::new(rpc_url);
+    let client = RpcClient::new(rpc_url);
     let recent_blockhash = client.get_latest_blockhash().expect("blockhash");
     let mut tx = Transaction::new_with_payer(&[ix], Some(&payer.pubkey()));
     tx.sign(&[&payer], recent_blockhash);
@@ -121,7 +181,7 @@ async fn test_get_twap_price() {
     };
 
     let rpc_url = std::env::var("SOLANA_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string());
-    let client = solana_client::rpc_client::RpcClient::new(rpc_url);
+    let client = RpcClient::new(rpc_url);
     let recent_blockhash = client.get_latest_blockhash().expect("blockhash");
     let mut tx = Transaction::new_with_payer(&[ix], Some(&payer.pubkey()));
     tx.sign(&[&payer], recent_blockhash);
