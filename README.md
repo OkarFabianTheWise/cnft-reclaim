@@ -15,7 +15,7 @@ This Solana program implements a simple on-chain oracle for Time-Weighted Averag
 
 ## How to connect the price update
 
-Each time the fragments move, we execute the price update
+Each time the fragments move(swaps), we execute the price update; We only save the snapshot of the price as observations in the program, this way we don't outrightly depend entirely on the pool for price update eluding manipulation.
 
 ## Key Implementation Details
 
